@@ -148,6 +148,21 @@
         const msg = score >= 90 ? "💯 완벽합니다! 국어 천재시군요!" : score >= 70 ? "👏 우수한 성적입니다! 조금만 더 하면 만점이에요." : "📖 다시 한번 도전하며 개념을 익혀볼까요?";
         document.getElementById("feedback-msg").innerText = msg;
     }
+    // 음성을 재생하는 함수 (스크립트 마지막 부분에 추가)
+function speak(text) {
+    // 현재 읽고 있는 음성이 있다면 즉시 중단
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ko-KR'; // 한국어로 설정
+    
+    // 속도 조절: 1.0이 기본 속도입니다. 
+    // 만약 1.0도 빠르다면 0.8이나 0.9로 숫자를 줄여보세요!
+    utterance.rate = 1.0; 
+    
+    window.speechSynthesis.speak(utterance);
+}
+
 
     initQuiz();
 </script>
