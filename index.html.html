@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>중2 국어: 설명 방법과 글쓰기 마스터</title>
+    <style>
+        :root { --primary: #4a90e2; --success: #2ecc71; --error: #e74c3c; --bg: #f8f9fa; }
+        body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        #quiz-container { background: white; width: 90%; max-width: 650px; padding: 2rem; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .timer-bar { width: 100%; height: 8px; background: #eee; border-radius: 4px; margin-bottom: 1.5rem; overflow: hidden; }
+        #timer-progress { width: 100%; height: 100%; background: var(--primary); transition: width 0.1s linear; }
+        .question { font-size: 1.15rem; font-weight: 700; color: #2c3e50; margin-bottom: 1.5rem; line-height: 1.6; min-height: 3em; word-break: keep-all; white-space: pre-wrap; }
+        .options { display: grid; gap: 0.8rem; }
+        button { padding: 0.9rem 1.2rem; border: 2px solid #edf2f7; border-radius: 12px; background: white; cursor: pointer; transition: all 0.2s; font-size: 1rem; text-align: left; color: #4a5568; line-height: 1.4; }
+        button:hover:not(:disabled) { border-color: var(--primary); background: #f0f7ff; }
+        .correct { background-color: #d1fae5 !important; border-color: var(--success) !important; color: #065f46; font-weight: bold; }
+        .wrong { background-color: #fee2e2 !important; border-color: var(--error) !important; color: #991b1b; }
+        #explanation { margin-top: 1.5rem; padding: 1.2rem; background: #f1f5f9; border-radius: 10px; display: none; font-size: 0.95rem; border-left: 5px solid var(--primary); color: #334155; }
+        #next-btn { width: 100%; margin-top: 1.5rem; padding: 1rem; background: #2c3e50; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; display: none; font-size: 1.1rem; }
+        #result-area { text-align: center; display: none; }
+        .score-circle { width: 140px; height: 140px; border-radius: 50%; background: var(--primary); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 1.5rem auto; font-size: 2.2rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div id="game-area">
+        <div class="header">
+            <span id="progress-text" style="font-weight: bold; color: #64748b;">문제 1 / 10</span>
+            <span id="timer-text" style="font-weight: bold; color: var(--primary);">20초</span>
+        </div>
+        <div class="timer-bar"><div id="timer-progress"></div></div>
+        <div class="question" id="question"></div>
+        <div class="options" id="options"></div>
+        <div id="explanation"></div>
+        <button id="next-btn" onclick="handleNext()">다음 문제로 →</button>
+    </div>
+    
+    <div id="result-area">
+        <h1>🎮 학습 완료!</h1>
+        <div class="score-circle"><span id="final-score">0</span><span style="font-size: 1rem;">점</span></div>
+        <p id="feedback-msg" style="margin-bottom: 2rem; color: #475569; font-weight: 500;"></p>
+        <button onclick="location.reload()" style="background:var(--primary); color:white; width:100%; padding: 1rem; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;">다시 도전하기</button>
+    </div>
+</div>
+
+<script>
+    const allQuestions = [
+        // 1-3. 사과 지문 기반 설명 방법
+        { q: "사과 지문 중 '사과는 껍질, 과육, 씨로 구성되어 있는데'에 쓰인 설명 방법은?", a: ["분석", "분류", "구분", "정의"], correct: 0, exp: "하나의 대상을 구성 요소별로 쪼개어 설명하고 있으므로 <b>분석</b>입니다." },
+        { q: "사과 지문에서 '사과잼'의 사례를 들어 설명한 방식(예시)과 '갈변 현상'의 뜻을 밝힌 방식(정의)이 바르게 짝지어진 것은?", a: ["예시 - 정의", "비교 - 대조", "인과 - 분석", "분류 - 구분"], correct: 0, exp: "구체적 사례를 든 것은 <b>예시</b>, 대상의 개념을 밝힌 것은 <b>정의</b>입니다." },
+        { q: "사과 지문에서 갈변 현상이 나타나는 '까닭'을 원인과 결과의 관계로 설명한 방법은?", a: ["인과", "대조", "분석", "예시"], correct: 0, exp: "어떤 현상이 일어난 원인과 그 결과를 밝히는 방법은 <b>인과</b>입니다." },
+        
+        // 4-5. 설명문의 특성 및 짜임
+        { q: "설명문의 짜임 중 '처음' 부분에 들어가야 할 내용으로 적절하지 않은 것은?", a: ["설명 대상 소개", "독자의 흥미 유발", "글을 쓰는 까닭 밝힘", "설명 내용 요약 및 강조"], correct: 3, exp: "요약 및 강조는 글의 마지막인 <b>끝(맺음말)</b> 부분의 역할입니다." },
+        { q: "설명문의 특성에 대한 설명으로 옳은 것은?", a: ["정보 전달이 주된 목적이다.", "글쓴이의 주관적 감동이 중요하다.", "함축적이고 비유적인 표현을 주로 쓴다.", "허구적인 사건을 바탕으로 작성한다."], correct: 0, exp: "설명문은 사실에 근거하여 정보를 <b>객관적</b>으로 전달하는 글입니다." },
+
+        // 6-8. 내용 조직 방법 (그림 및 표)
+        { q: "내용 조직 방법 중 '서로 대등한 여러 정보를 늘어놓는 방법'과 자주 쓰이는 표현은?", a: ["나열 구조 - 첫째, 둘째", "순서 구조 - 그다음", "인과 구조 - 왜냐하면", "비교 구조 - 이와 달리"], correct: 0, exp: "대등한 정보를 나열할 때는 '첫째, 둘째'와 같은 표현을 사용합니다." },
+        { q: "그림 퀴즈: 두 원이 겹쳐져 공통점과 차이점을 보여주는 구조도에 적합한 조직 방법은?", a: ["비교·대조 구조", "문제-해결 구조", "순서 구조", "나열 구조"], correct: 0, exp: "공통점(비교)과 차이점(대조)을 시각화할 때 벤다이어그램 구조를 활용합니다." },
+        { q: "현상의 문제점을 밝히고 그에 대한 해결 방안을 제시하는 내용 조직 방법은?", a: ["문제-해결 구조", "원인-결과 구조", "나열 구조", "순서 구조"], correct: 0, exp: "문제점을 제시하고 그 해결책을 설명하는 방식은 <b>문제-해결 구조</b>입니다." },
+
+        // 9-11. 글쓰기 단계 및 점검
+        { q: "글쓰기 5단계 중 '자료를 수집하고, 객관적이고 정확한 자료를 선정하는 단계'는?", a: ["내용 생성하기", "계획하기", "내용 조직하기", "고쳐쓰기"], correct: 0, exp: "글의 재료를 모으고 선별하는 과정은 <b>내용 생성하기</b> 단계입니다." },
+        { q: "설명문 쓰기 단계 중 '3단 구성에 맞게 내용을 배열하고 조직 방법'을 결정하는 단계는?", a: ["내용 조직하기", "내용 생성하기", "표현하기", "고쳐쓰기"], correct: 0, exp: "수집한 자료를 체계적으로 배열하는 것은 <b>내용 조직하기</b> 단계입니다." },
+        { q: "고쳐쓰기 단계에서 점검해야 할 '평가 기준'으로 적절하지 않은 것은?", a: ["객관적이고 정확한 정보인가?", "독자가 이해하기 쉽게 설명했는가?", "글쓴이의 개성과 주장이 강한가?", "대상 특성에 맞는 설명 방법을 썼는가?"], correct: 2, exp: "설명문은 주관적 주장보다 <b>객관적 정보 전달</b>이 우선되어야 합니다." },
+
+        // 12-14. 대상 특성에 따른 방법 선택
+        { q: "다음 중 설명 대상의 특성상 반드시 '인과'의 방법이 포함되어야 하는 주제는?", a: ["지구 온난화가 일어나는 까닭", "전통 한식의 종류", "연필의 구성 요소", "축구와 농구의 차이점"], correct: 0, exp: "현상이 일어난 원인(까닭)을 밝혀야 하므로 <b>인과</b>가 필수적입니다." },
+        { q: "'세계 여러 나라의 문화'처럼 대상의 특성이 다양할 때 활용하기 좋은 방법들의 조합은?", a: ["비교, 대조, 예시, 분류", "인과만 활용", "정의만 활용", "분석만 활용"], correct: 0, exp: "다양한 측면을 보여주기 위해 여러 설명 방법을 <b>복합적</b>으로 쓰는 것이 효과적입니다." },
+        { q: "설명문 쓰기의 '표현하기' 단계에서 작성하는 '초고'에 대한 설명으로 옳은 것은?", a: ["일단 써 내려간 글이며 완성본이 아니다.", "완벽한 문장으로 한 번에 끝내야 한다.", "자료를 수집하는 단계의 메모이다.", "글의 주제를 정하는 과정이다."], correct: 0, exp: "초고는 조직된 내용을 바탕으로 써 내려간 첫 글이며, <b>고쳐쓰기</b>를 통해 완성됩니다." }
+    ];
+
+    let quizData = [];
+    let currentIdx = 0;
+    let score = 0;
+    let timeLeft = 20;
+    let timerInterval;
+
+    function initQuiz() {
+        quizData = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        loadQuestion();
+    }
+
+    function startTimer() {
+        timeLeft = 20;
+        document.getElementById("timer-progress").style.width = "100%";
+        timerInterval = setInterval(() => {
+            timeLeft -= 0.1;
+            document.getElementById("timer-progress").style.width = (timeLeft / 20 * 100) + "%";
+            document.getElementById("timer-text").innerText = Math.ceil(timeLeft) + "초";
+            if (timeLeft <= 0) { clearInterval(timerInterval); checkAnswer(-1); }
+        }, 100);
+    }
+
+    function loadQuestion() {
+        const data = quizData[currentIdx];
+        document.getElementById("progress-text").innerText = `문제 ${currentIdx + 1} / 10`;
+        document.getElementById("question").innerText = data.q;
+        document.getElementById("explanation").style.display = "none";
+        document.getElementById("next-btn").style.display = "none";
+        
+        const optionsDiv = document.getElementById("options");
+        optionsDiv.innerHTML = "";
+        data.a.forEach((opt, i) => {
+            const btn = document.createElement("button");
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(i);
+            optionsDiv.appendChild(btn);
+        });
+        startTimer();
+    }
+
+    function checkAnswer(idx) {
+        clearInterval(timerInterval);
+        const data = quizData[currentIdx];
+        const btns = document.querySelectorAll(".options button");
+        btns.forEach(b => b.disabled = true);
+
+        if (idx === data.correct) {
+            btns[idx].classList.add("correct");
+            score += 10;
+        } else {
+            if (idx !== -1) btns[idx].classList.add("wrong");
+            btns[data.correct].classList.add("correct");
+        }
+        document.getElementById("explanation").innerHTML = data.exp;
+        document.getElementById("explanation").style.display = "block";
+        document.getElementById("next-btn").style.display = "block";
+    }
+
+    function handleNext() {
+        currentIdx++;
+        if (currentIdx < 10) loadQuestion();
+        else showResult();
+    }
+
+    function showResult() {
+        document.getElementById("game-area").style.display = "none";
+        document.getElementById("result-area").style.display = "block";
+        document.getElementById("final-score").innerText = score;
+        const msg = score >= 90 ? "💯 완벽합니다! 국어 천재시군요!" : score >= 70 ? "👏 우수한 성적입니다! 조금만 더 하면 만점이에요." : "📖 다시 한번 도전하며 개념을 익혀볼까요?";
+        document.getElementById("feedback-msg").innerText = msg;
+    }
+
+    initQuiz();
+</script>
+</body>
+</html>
